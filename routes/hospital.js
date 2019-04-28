@@ -1,92 +1,91 @@
 // Requires
 var express = require('express');
-var bcrypt = require('bcryptjs');
+
 
 // Inicializar variables
 var app = express();
-var Usuario = require('../models/usuario');
+var Hospital = require('../models/hospital');
 var auth = require('../middleware/auth');
 
 // Routes
-// Listar todos los usuarios
-app.get('/', (req, res, next) => {
+// Listar todos los hospitales
+app.get('/', (req, res) => {
     var desde = 0;
 
     if (!Number.isNaN(req.query.desde)) {
         desde = Number(req.query.desde);
     }
 
-    Usuario.find({}, 'nombre apellido email img role')
+    Hospital.find({})
         .skip(desde)
         .limit(5)
+        .populate('usuario', 'nombre apellido email')
         .exec(
-            (err, usuarios) => {
+            (err, hospitales) => {
                 if (err) {
                     return res.status(500).json({
                         ok: false,
-                        msg: 'Ocurrió un error grave al recuperar todos los usuarios desde la base de datos.',
+                        msg: 'Ocurrió un error grave al recuperar todos los hospitales desde la base de datos.',
                         err
                     });
                 }
-                Usuario.countDocuments({}, (err, count) => {
+                Hospital.countDocuments({}, (err, count) => {
                     if (err) {
                         return res.status(500).json({
                             ok: false,
-                            msg: 'Ocurrió un error grave al recuperar todos los usuarios desde la base de datos.',
+                            msg: 'Ocurrió un error grave al recuperar todos los hospitales desde la base de datos.',
                             err
                         });
                     }
                     res.status(200).json({
                         ok: true,
-                        msg: 'Recuperados todos los usuarios de la base de datos.',
-                        data: usuarios,
+                        msg: 'Recuperados todos los hospitales de la base de datos.',
+                        data: hospitales,
                         count
                     });
+
                 });
             });
 });
 
-
-// Actualizar usuario
+// Actualizar hospital
 app.put('/:id', auth.verificaToken, (req, res) => {
     var id = req.params.id;
     var body = req.body;
 
-    Usuario.findById(id, (err, user) => {
+    Hospital.findById(id, (err, hospitalRecuperado) => {
 
         if (err) {
             return res.status(500).json({
                 ok: false,
-                msg: 'Ocurrió un error grave al actualizar el usuario en la base de datos.',
+                msg: 'Ocurrió un error grave al actualizar el hospital en la base de datos.',
                 err
             });
         }
 
-        if (!user) {
+        if (!hospitalRecuperado) {
             return res.status(400).json({
                 ok: false,
-                msg: 'No se encuentra el usuario ' + id + ' en la base de datos.',
+                msg: 'No se encuentra el hospital ' + id + ' en la base de datos.',
                 data: id
             });
         }
 
-        user.nombre = body.nombre;
-        user.apellido = body.apellido;
-        user.email = body.email;
-        user.role = body.role;
+        hospitalRecuperado.nombre = body.nombre;
+        hospitalRecuperado.img = body.img;
 
-        user.save((err, saved) => {
+        hospitalRecuperado.save((err, saved) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    msg: 'Ocurrió un error grave al actualizar el usuario ' + id + ' en la base de datos.',
+                    msg: 'Ocurrió un error grave al actualizar el hospital ' + id + ' en la base de datos.',
                     err
                 });
             }
-            saved.password = ':)';
+
             res.status(200).json({
                 ok: true,
-                msg: 'Se actualizó el usuario ' + id + ' en la base de datos.',
+                msg: 'Se actualizó el hospital ' + id + ' en la base de datos.',
                 data: saved
             });
         });
@@ -97,29 +96,28 @@ app.put('/:id', auth.verificaToken, (req, res) => {
 
 
 
-// Crear usuario nuevo
+// Crear hospital nuevo
 app.post('/', auth.verificaToken, (req, res) => {
     var body = req.body;
-    var usuario = new Usuario({
+    var usuario = req.usuario;
+
+    var hospital = new Hospital({
         nombre: body.nombre,
-        apellido: body.apellido,
-        email: body.email,
-        password: bcrypt.hashSync(body.password, 10),
-        img: body.img,
-        role: body.role
+        usuario: usuario._id,
+        img: body.img
     });
 
-    usuario.save((err, saved) => {
+    hospital.save((err, saved) => {
         if (err) {
             return res.status(400).json({
                 ok: false,
-                msg: 'Ocurrió un error grave al guardar el nuevo usuario en la base de datos.',
+                msg: 'Ocurrió un error grave al guardar el nuevo hospital en la base de datos.',
                 err
             });
         }
         res.status(201).json({
             ok: true,
-            msg: 'Creado e insertado el nuevo usuario en la base de datos.',
+            msg: 'Creado e insertado el nuevo hospital en la base de datos.',
             data: saved
         });
     });
@@ -127,14 +125,14 @@ app.post('/', auth.verificaToken, (req, res) => {
 });
 
 
-// Borrar un usuario
+// Borrar un hospital
 app.delete('/:id', auth.verificaToken, (req, res) => {
     var id = req.params.id;
-    Usuario.findByIdAndDelete(id, (err, deleted) => {
+    Hospital.findByIdAndDelete(id, (err, deleted) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                msg: 'Ocurrió un error grave al eliminar el usuario de la base de datos.',
+                msg: 'Ocurrió un error grave al eliminar el hospital de la base de datos.',
                 err
             });
         }
@@ -142,13 +140,13 @@ app.delete('/:id', auth.verificaToken, (req, res) => {
         if (!deleted) {
             return res.status(400).json({
                 ok: false,
-                msg: 'No se encuentra el usuario ' + id + ' en la base de datos.',
+                msg: 'No se encuentra el hospital ' + id + ' en la base de datos.',
                 data: id
             });
         }
         res.status(200).json({
             ok: true,
-            msg: 'Se encontró y eliminó el usuario de la base de datos.',
+            msg: 'Se encontró y eliminó el hospital de la base de datos.',
             data: deleted
         });
     });

@@ -19,8 +19,18 @@ mongoose.connect('mongodb://localhost:27017/hospitalDB', { useNewUrlParser: true
 var appRoutes = require('./routes/app');
 var usuarioRoutes = require('./routes/usuario');
 var loginRoutes = require('./routes/login');
+var medicoRoutes = require('./routes/medico');
+var hospitalRoutes = require('./routes/hospital');
+var busquedaRoutes = require('./routes/busqueda');
+var uploadRoutes = require('./routes/upload');
+var imgRoutes = require('./routes/img');
 
+app.use('/img', imgRoutes);
+app.use('/upload', uploadRoutes);
+app.use('/buscar', busquedaRoutes);
 app.use('/usuario', usuarioRoutes);
+app.use('/medico', medicoRoutes);
+app.use('/hospital', hospitalRoutes);
 app.use('/login', loginRoutes);
 app.use('/', appRoutes);
 
